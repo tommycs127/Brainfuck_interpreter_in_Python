@@ -7,8 +7,8 @@ class Brainfuck:
         "clean" indicates whether cleaning the cell before running the code;
         "printCell" indicates whether printing all cells after running the code.
     '''
-    def run(self, s, clean=True, printCell=True):
-        if (type(s) is not str): raise TypeError("{0} is {1}, not str".format(s, type(s)))
+    def run(self, code, clean=True, printCell=True):
+        if (type(code) is not str): raise TypeError("{0} is {1}, not str".format(code, type(code)))
         if (type(clean) is not bool): raise TypeError("{0} is {1}, not bool".format(clean, type(clean)))
         if (type(printCell) is not bool): raise TypeError("{0} is {1}, not bool".format(printCell, type(printCell)))
         
@@ -16,37 +16,37 @@ class Brainfuck:
         
         s_loc = 0
         
-        while (s_loc < len(s)):
-            if (s[s_loc] == '['): self.__loopLoc.append([s_loc])
-            elif (s[s_loc] == ']'): self.__insertLoopEnd(s_loc)
+        while (s_loc < len(code)):
+            if (code[s_loc] == '['): self.__loopLoc.append([s_loc])
+            elif (code[s_loc] == ']'): self.__insertLoopEnd(s_loc)
             s_loc += 1
         
         s_loc = 0
         
-        while (s_loc < len(s)):
-            if (s[s_loc] == '>'):
+        while (s_loc < len(code)):
+            if (code[s_loc] == '>'):
                 if self.__ptr == len(self.__cell)-1: self.__cell.append(0)
                 self.__ptr += 1
-            elif (s[s_loc] == '<'):
+            elif (code[s_loc] == '<'):
                 if self.__ptr-1 < 0: raise IndexError("Error @ {0} : index out of range".format(s_loc+1))
                 self.__ptr -= 1
-            elif (s[s_loc] == '+'):
+            elif (code[s_loc] == '+'):
                 self.__cell[self.__ptr] += 1
-            elif (s[s_loc] == '-'):
+            elif (code[s_loc] == '-'):
                 self.__cell[self.__ptr] -= 1
-            elif (s[s_loc] == '.'):
+            elif (code[s_loc] == '.'):
                 print(chr(self.__cell[self.__ptr]), end='')
-            elif (s[s_loc] == ','):
+            elif (code[s_loc] == ','):
                 self.__cell[self.__ptr] = ord((input() or '\0')[0])
-            elif (s[s_loc] == '['):
+            elif (code[s_loc] == '['):
                 if self.__cell[self.__ptr] == 0: s_loc = self.__findLocation(s_loc)
-            elif (s[s_loc] == ']'):
+            elif (code[s_loc] == ']'):
                 if self.__cell[self.__ptr]: s_loc = self.__findLocation(s_loc)
             
             s_loc += 1
             
         if (printCell):
-            print("{{ {0} }}".format(
+            print("\n{{ {0} }}".format(
                     ", ".join(
                         [
                             "[{0}]".format(self.__cell[i]) 
