@@ -5,7 +5,7 @@ class Brainfuck:
     '''
     The parameter
         "clean" indicates whether cleaning the cell before running the code;
-        "printCell" indicates whether printing the cell after running the code;
+        "printCell" indicates whether printing all cells after running the code.
     '''
     def run(self, s, clean=True, printCell=True):
         if (type(s) is not str): raise TypeError("{0} is {1}, not str".format(s, type(s)))
