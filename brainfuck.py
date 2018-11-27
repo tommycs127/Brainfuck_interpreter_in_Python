@@ -4,8 +4,9 @@ class Brainfuck:
         
     '''
     The parameter
-        "clean" indicates whether cleaning the cell before running the code;
-        "printCell" indicates whether printing all cells after running the code.
+        "code" indicates the Brainfuck code. Must be a string;
+        "clean" indicates whether cleaning the cell before running the code. Must be a boolean;
+        "printCell" indicates whether printing all cells after running the code. Must be a boolean.
     '''
     def run(self, code, clean=True, printCell=True):
         if (type(code) is not str): raise TypeError("{0} is {1}, not str".format(code, type(code)))
@@ -67,6 +68,7 @@ class Brainfuck:
         raise self.AsymmetryError("Error @ {0}: loop asymmetry".format(loc+1))
         
     def __findLocation(self, loc):
+        if (type(loc) is not int): raise TypeError("{0} is {1}, not int".format(loc, type(loc)))
         for i in self.__loopLoc:
             if (loc in i):
                 other = [item for item in i if item not in [loc]]
