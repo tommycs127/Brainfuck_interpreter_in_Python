@@ -1,90 +1,146 @@
-class Brainfuck:
-    def __init__(self):
-        self.__clean()
+# Python 3.3+
+
+class Brainfuck(object):
+    def __init__(self, cells_length=100):
+        self.__data_pointer = 0
+        self.__instruc_pointer = 0
+        self.code = ''
         
-    '''
-    The parameter
-        "code" indicates the Brainfuck code. Must be a string;
-        "clean" indicates whether cleaning the cell before running the code. Must be a boolean;
-        "printCell" indicates whether printing all cells after running the code. Must be a boolean.
-    '''
-    def run(self, code, clean=True, printCell=True):
-        if (type(code) is not str): raise TypeError("{0} is {1}, not str".format(code, type(code)))
-        if (type(clean) is not bool): raise TypeError("{0} is {1}, not bool".format(clean, type(clean)))
-        if (type(printCell) is not bool): raise TypeError("{0} is {1}, not bool".format(printCell, type(printCell)))
+        self.cells_length = cells_length
+        self.__cells = [0] * cells_length
         
-        if (clean): self.__clean()
+        self.__bracket_lookup = dict()
+        self.__bracket_ignore = list()
         
-        s_loc = 0
+        self.__commands = dict()
+        self.__register_commands()
         
-        while (s_loc < len(code)):
-            if (code[s_loc] == '['): self.__loopLoc.append([s_loc])
-            elif (code[s_loc] == ']'): self.__insertLoopEnd(s_loc)
-            s_loc += 1
+    def __register_commands(self):
+        self.__commands['>'] = self.__increment_data_pointer
+        self.__commands['<'] = self.__decrement_data_pointer
+        self.__commands['+'] = self.__increment_byte
+        self.__commands['-'] = self.__decrement_byte
+        self.__commands[','] = self.__input
+        self.__commands['.'] = self.__output
+        self.__commands['['] = self.__while
+        self.__commands[']'] = self.__while_end
+        self.__commands['#'] = self.__print_cells
         
-        s_loc = 0
-        
-        while (s_loc < len(code)):
-            if (code[s_loc] == '>'):
-                if self.__ptr == len(self.__cell)-1: self.__cell.append(0)
-                self.__ptr += 1
-            elif (code[s_loc] == '<'):
-                if self.__ptr-1 < 0: raise IndexError("Error @ {0} : index out of range".format(s_loc+1))
-                self.__ptr -= 1
-            elif (code[s_loc] == '+'):
-                self.__cell[self.__ptr] += 1
-            elif (code[s_loc] == '-'):
-                self.__cell[self.__ptr] -= 1
-            elif (code[s_loc] == '.'):
-                print(chr(self.__cell[self.__ptr]), end='')
-            elif (code[s_loc] == ','):
-                self.__cell[self.__ptr] = ord((input() or '\0')[0])
-            elif (code[s_loc] == '['):
-                if self.__cell[self.__ptr] == 0: s_loc = self.__findLocation(s_loc)
-            elif (code[s_loc] == ']'):
-                if self.__cell[self.__ptr]: s_loc = self.__findLocation(s_loc)
+    # Command >
+    def __increment_data_pointer(self):
+        if (self.__data_pointer + 1) < self.cells_length:
+            self.__data_pointer += 1
+        else:
+            raise MemoryError('Out of bounds')
+        self.__instruc_pointer += 1
+    
+    # Command <
+    def __decrement_data_pointer(self):
+        if (self.__data_pointer - 1) >= 0:
+            self.__data_pointer -= 1
+        else:
+            raise MemoryError('Out of bounds')
+        self.__instruc_pointer += 1
+    
+    # Command +
+    def __increment_byte(self):
+        self.__cells[self.__data_pointer] += 1
+        self.__instruc_pointer += 1
+    
+    # Command -
+    def __decrement_byte(self):
+        self.__cells[self.__data_pointer] -= 1
+        self.__instruc_pointer += 1
+    
+    # Command ,
+    def __input(self):
+        self.__cells[self.__data_pointer] = ord(input()[:1] or '\0')
+        self.__instruc_pointer += 1
+    
+    # Command .
+    def __output(self):
+        print(chr(self.__cells[self.__data_pointer]), end='')
+        self.__instruc_pointer += 1
+    
+    # Command [
+    def __while(self):
+        if self.__should_ignore(self.__instruc_pointer):
+            return
+        if self.__cells[self.__data_pointer] == 0:
+            self.__instruc_pointer = self.__bracket_lookup[self.__instruc_pointer]
+        else:
+            self.__instruc_pointer += 1
+    
+    # Command ]
+    def __while_end(self):
+        if self.__should_ignore(self.__instruc_pointer):
+            return
+        if self.__cells[self.__data_pointer] != 0:
+            self.__instruc_pointer = self.__bracket_lookup[self.__instruc_pointer]
+        else:
+            self.__instruc_pointer += 1
             
-            s_loc += 1
+    # Command # - Not original; for debug
+    def __print_cells(self):
+        self.print_cells()
+        self.__instruc_pointer += 1
             
-        if (printCell):
-            print("\n{{ {0} }}".format(
-                    ", ".join(
-                        [
-                            "[{0}]".format(self.__cell[i]) 
-                            if i == self.__ptr else
-                            "{0}".format(self.__cell[i])
-                            for i in range(len(self.__cell))
-                        ]
-                    )
-                )
-            )
+    # Skip if not command
+    def __skip(self):
+        self.__instruc_pointer += 1
         
-    def __insertLoopEnd(self, loc):
-        if (type(loc) is not int): raise TypeError("{0} is {1}, not int".format(loc, type(loc)))
-        for i in reversed(self.__loopLoc):
-            if (len(i) == 1):
-                i.append(loc)
-                return None
-        raise self.AsymmetryError("Error @ {0}: loop asymmetry".format(loc+1))
+    def __execute(self, symbol):
+        self.__commands.get(symbol, self.__skip)()
         
-    def __findLocation(self, loc):
-        if (type(loc) is not int): raise TypeError("{0} is {1}, not int".format(loc, type(loc)))
-        for i in self.__loopLoc:
-            if (loc in i):
-                other = [item for item in i if item not in [loc]]
-                if (len(other) == 1): return other.pop(0)
-        raise self.AsymmetryError("Error @ {0}: loop asymmetry".format(loc+1))
+    def __should_ignore(self, pos):
+        return pos in self.__bracket_ignore
+    
+    def __get_parentheses(self, code):
+        parentheses_start = []
         
-    def __clean(self):
-        self.__cell = [0]
-        self.__ptr = 0
+        for instruc_pointer in range(len(code)):
+            if code[instruc_pointer] == '[':
+                parentheses_start.append(instruc_pointer)
+            elif code[instruc_pointer] == ']':
+                if len(parentheses_start) > 0:
+                    parentheses = parentheses_start.pop()
+                    self.__bracket_lookup[parentheses] = instruc_pointer
+                    self.__bracket_lookup[instruc_pointer] = parentheses
+                else:
+                    self.__bracket_ignore.append(instruc_pointer)
         
-        '''
-        Loop character location.
-        Each element in the list is a list with two integers,
-        indicating the location of '[' and ']'.
-        '''
-        self.__loopLoc = []
+        self.__bracket_ignore += parentheses_start.copy()
+        self.__bracket_ignore.sort()
         
-    class AsymmetryError(Exception):
-        pass
+    def print_cells(self):
+        print('[', end='')
+        for i in range(len(self.__cells)):
+            if i != self.__data_pointer:
+                print(self.__cells[i], end='' if i + 1 == len(self.__cells) else ', ')
+            else:
+                print(f'({self.__cells[i]})', end='' if i + 1 == len(self.__cells) else ', ')
+        print(']')
+        
+    def check_code(self, code=None):
+        if code is None:
+            code = self.code
+    
+        self.__bracket_lookup.clear()
+        self.__bracket_ignore.clear()
+        
+        self.__get_parentheses(code)
+        for pos in self.__bracket_ignore:
+            print(f'Warning: unmatched parentheses at position {pos}.')
+    
+    def run(self, code=None):
+        if code is None:
+            code = self.code
+            
+        self.check_code(code)
+            
+        self.__instruc_pointer = 0
+        while self.__instruc_pointer < len(code):
+            self.__execute(code[self.__instruc_pointer])
+        
+        if '.' in code:
+            print()
