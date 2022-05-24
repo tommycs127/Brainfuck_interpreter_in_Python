@@ -24,7 +24,7 @@ class Brainfuck(object):
         self.__commands['.'] = self.__output
         self.__commands['['] = self.__while
         self.__commands[']'] = self.__while_end
-        self.__commands['#'] = self.__print_cells
+        self.__commands['@'] = self.__print_data_pointer  # Register your own command here
         
     # Command >
     def __increment_data_pointer(self):
@@ -65,6 +65,7 @@ class Brainfuck(object):
     # Command [
     def __while(self):
         if self.__should_ignore(self.__instruc_pointer):
+            self.__instruc_pointer += 1
             return
         if self.__cells[self.__data_pointer] == 0:
             self.__instruc_pointer = self.__bracket_lookup[self.__instruc_pointer]
@@ -74,15 +75,16 @@ class Brainfuck(object):
     # Command ]
     def __while_end(self):
         if self.__should_ignore(self.__instruc_pointer):
+            self.__instruc_pointer += 1
             return
         if self.__cells[self.__data_pointer] != 0:
             self.__instruc_pointer = self.__bracket_lookup[self.__instruc_pointer]
         else:
             self.__instruc_pointer += 1
             
-    # Command # - Not original; for debug
-    def __print_cells(self):
-        self.print_cells()
+    # Command @ - Just an example to show that you can create your own command
+    def __print_data_pointer(self):
+        print(f'The data pointer is at {self.__data_pointer}.')
         self.__instruc_pointer += 1
             
     # Skip if not command
