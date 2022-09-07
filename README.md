@@ -1,5 +1,5 @@
 # Brainfuck interpreter in Python
-An attempt to write a Brainfuck Interpreter in Python.
+An attempt to write a [Brainfuck](https://en.wikipedia.org/wiki/Brainfuck) Interpreter in Python.
 
 An example code using this interpreter is shown at [example.py](example.py).
 
